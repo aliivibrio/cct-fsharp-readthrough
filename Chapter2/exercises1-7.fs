@@ -1,7 +1,6 @@
 // Exercise 2.1
 
 // Just evaluating some expressions at the repl, skipped; there was plenty of that working through the chapter.
-
 // Exercise 2.2
 
 // 2.2.1
@@ -124,13 +123,7 @@ let rec inOrder binTree =
     | Node (leftchild, rightchild) -> List.append (inOrder leftchild) (inOrder rightchild)
 ;;
 
-let rec deleteNth item n lst =
-    match lst with
-    | [] -> []
-    | x::xs when n=0 && x=item -> xs
-    | x::xs when n>0 && x=item -> x::(deleteNth item (n-1) xs)
-    | x::xs                    -> x::(deleteNth item n xs)
-;;
+
 
 let rec isPrefix lst1 lst2 =
     match (lst1, lst2) with

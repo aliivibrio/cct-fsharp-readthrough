@@ -31,14 +31,6 @@ let rec numberOfSublists lx ly =
     | (x::xs, y::ys)                -> numberOfSublists lx ys
 ;;
 
-type 'a Monoid = Monoid of ('a -> 'a -> 'a) * 'a ;;
-
-let rec liftMonoidToList (Monoid(op, ident)) f lst =
-    match lst with
-    | []    -> ident
-    | x::xs -> op (f x) (liftMonoidToList (Monoid(op, ident)) f xs)
-;;
-
 // 2.9: Operations on finite sets
 
 // Earlier in the chapter there is some ML defining a set type with operations.
@@ -92,3 +84,56 @@ let rec totalFunctions (dom: 'a Set) (cod: 'b Set) =
                                 Set.unionMany (Set.map extendOneGraph smallerGraphs)
     | None                   -> Set.singleton Set.empty<'a * 'b>
 ;;
+
+// 2.10: Sorting
+
+type 'a Btree when 'a: comparison = 
+    | Empty
+    | Tip of 'a
+    | Node of ('a Btree) * 'a * ('a Btree)
+;;
+
+// insert function which maintains order
+let rec insert tree newItem =
+    match tree with
+    | Empty         -> Tip newItem
+    | Tip existing when newItem < existing            -> Node (Tip newItem, existing, Tip existing)
+    | Tip existing when newItem >= existing           -> Node (Tip existing, newItem, Tip newItem)
+    | Node (left, label, right) when newItem < label  -> Node ((insert left newItem), label, right)
+    | Node (left, label, right) when newItem >= label -> Node (left, label, (insert right newItem))
+;;
+
+// flattening by preorder traversal
+let rec flatten tree =
+    match tree with
+    | Empty                 -> Seq.empty
+    | Tip x                 -> Seq.singleton x
+    | Node (left, _, right) -> Seq.append (flatten left) (flatten right)
+;;
+
+// sort by building ordered tree & putting it in the flattener
+let sort sequence = Seq.fold insert Empty sequence |> flatten ;;
+
+// Exercise 2.11: Univeral algebra and recursion
+
+// Not entirely sure why this one is starred as difficult, unless there's an implicit
+// "Go through *every* exercise and rewrite using lift", which is probably a good exercise!
+// Right now done only for the examples given in 2.11.
+
+type 'a Monoid = Monoid of ('a -> 'a -> 'a) * 'a ;;
+
+let rec liftMonoidHomomorphismToList (Monoid(op, ident)) f lst =
+    match lst with
+    | []    -> ident
+    | x::xs -> op (f x) (liftMonoidHomomorphismToList (Monoid(op, ident)) f xs)
+;;
+
+let intWithAdd = Monoid ((+), 0) ;;
+let fancyLength lst = liftMonoidHomomorphismToList intWithAdd (fun _ -> 1) lst ;;
+let fancySum lst = liftMonoidHomomorphismToList intWithAdd id lst ;;
+
+let boolWithOr = Monoid ((||), false) ;;
+let fancyIsMember s lst = liftMonoidHomomorphismToList boolWithOr ((=) s) lst ;;
+
+let listWithAppend = Monoid (List.append, List.empty) ;;
+let fancyMapList f lst = liftMonoidHomomorphismToList listWithAppend (f >> List.singleton) lst ;;
